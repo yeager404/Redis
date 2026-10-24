@@ -1,0 +1,22 @@
+# Build files
+/build/
+
+#Compiled Files
+
+*.o
+*.a
+*.so
+
+#IDE and editor
+.vscode/
+.idea/
+*.swp
+
+#Logs
+*.log
+
+# Secrets
+.env
+
+# Personal Reference
+/reference/
