@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/yeager404/Workspace/System_Design/Redis/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

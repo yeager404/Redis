@@ -1,0 +1,2 @@
+/usr/bin/ar qc libredis_protocol.a CMakeFiles/redis_protocol.dir/src/protocol/RespParser.cpp.o CMakeFiles/redis_protocol.dir/src/protocol/RespEncoder.cpp.o
+/usr/bin/ranlib libredis_protocol.a
