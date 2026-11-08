@@ -1,32 +1,36 @@
-cmake_minimum_required(VERSION 3.26)
-
+cmake_minimum_required(VERSION 3.20)
 project(redis_server LANGUAGES CXX)
 
+# USE C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Compiler warnings
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
 
-# Phase 2: RESP2 protocol library
+
+# ========= Include Directories ===========
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+# ========= RESP2 Protocol Library =============
 add_library(redis_protocol
-  src/protocol/RespParser.cpp
-  src/protocol/RespEncoder.cpp
+  src/protocol/resp/RespParser.cpp
+  src/protocol/resp/RespEncoder.cpp
+  src/protocol/resp/Resp2Codec.cpp
+  src/protocol/resp/Resp2ProtocolFactory.cpp
 )
 
+# ------ Public Headers-----------
 target_include_directories(redis_protocol
-  PUBLIC $(PROJECT_SOURCE_DIR)/include
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
 )
 
-target_compile_options(redis_protocol PRIVATE
-  -Wall
-  -Wextra
-  -Wpedantic
-)
-
-# Phase 1: TCP server
-add_executable(redis_server
-  src/main.cpp
+# ========= Networking Library =============
+add_library(redis_net
   src/net/Buffer.cpp
   src/net/Connection.cpp
   src/net/ConnectionManager.cpp
@@ -35,38 +39,76 @@ add_executable(redis_server
   src/net/EventLoop.cpp
 )
 
-target_include_directories(redis_server
-  PRIVATE ${PROJECT_SOURCE_DIR}/include
+target_include_directories(redis_net
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
 )
 
-target_compile_options(redis_server PRIVATE
-  -Wall
-  -Wextra
-  -Wpedantic
+# ========= Server Executable =============
+add_executable(redis_server
+  src/main.cpp
 )
 
-target_link_libraries(redis_server PRIVATE redis_protocol)
+target_link_libraries(redis_server
+  PRIVATE
+    redis_net
+    redis_protocol
+)
 
-# Protocol Tests
+# ========= TESTING =========
+
+#Enable CTest
 include(CTest)
 
 if(BUILD_TESTING)
-  add_executable(protocol_test
-    tests/protocol_test.cpp
-  )
+  enable_testing()
 
-  target_link_libraries(protocol_test
+  # RESP Parser Unit Test
+  add_executable(resp_parser_test
+    tests/unit/protocol/resp_parser_test.cpp
+  )
+  target_link_libraries(resp_parser_test
     PRIVATE redis_protocol
   )
-
-  target_compile_options(protocol_test PRIVATE
-    -Wall
-    -Wextra
-    -Wpedantic
-  )
-  
   add_test(
-    NAME RESP2ProtocolTests
-    COMMAND protocol_test
+    NAME RESPParserTest
+    COMMAND resp_parser_test
   )
+
+  # RESP Codec & Encoder Unit Test
+  add_executable(resp_codec_test
+    tests/unit/protocol/resp_codec_test.cpp
+  )
+  target_link_libraries(resp_codec_test
+    PRIVATE redis_protocol
+  )
+  add_test(
+    NAME RESPCodecTest
+    COMMAND resp_codec_test
+  )
+
+  # Buffer Unit Test
+  add_executable(buffer_test
+    tests/unit/net/buffer_test.cpp
+  )
+  target_link_libraries(buffer_test
+    PRIVATE redis_net
+  )
+  add_test(
+    NAME NetBufferTest
+    COMMAND buffer_test
+  )
+
+  # Connection & ConnectionManager Unit Test
+  add_executable(connection_test
+    tests/unit/net/connection_test.cpp
+  )
+  target_link_libraries(connection_test
+    PRIVATE redis_net
+  )
+  add_test(
+    NAME NetConnectionTest
+    COMMAND connection_test
+  )
+
 endif()

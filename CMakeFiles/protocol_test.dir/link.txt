@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/protocol_test.dir/link.d CMakeFiles/protocol_test.dir/tests/protocol_test.cpp.o -o protocol_test  libredis_protocol.a
