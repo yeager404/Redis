@@ -55,6 +55,37 @@ target_link_libraries(redis_server
     redis_protocol
 )
 
+# ============ Storage Library ============
+add_library(redis_storage
+  src/storage/InMemoryKeyValueStore.cpp
+)
+
+target_include_directories(redis_storage PUBLIC include)
+
+# ========= Application Library ===========
+
+add_library(redis_application
+  src/application/CommandDispatcher.cpp 
+)
+
+target_include_directories(redis_application PUBLIC include)
+
+target_link_libraries(redis_application PUBLIC redis_storage)
+
+add_executable(command_dispatcher_test
+  tests/unit/application/command_dispatcher_test.cpp
+)
+
+target_link_libraries(
+  command_dispatcher_test
+  PRIVATE redis_application
+)
+
+add_test(
+  NAME command_dispatcher_test
+  COMMAND command_dispatcher_test
+)
+
 # ========= TESTING =========
 
 #Enable CTest
@@ -110,5 +141,14 @@ if(BUILD_TESTING)
     NAME NetConnectionTest
     COMMAND connection_test
   )
+
+  # Storage
+  add_executable(storage_test
+    tests/unit/application/storage_test.cpp
+  )
+
+  target_link_libraries(storage_test PRIVATE redis_storage)
+  
+  add_test(NAME storage_test COMMAND storage_test)
 
 endif()
