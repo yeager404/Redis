@@ -1,21 +1,24 @@
 #pragma once
 #include <cstddef>
 #include <string>
+#include <string_view>
 
 namespace redis::net {
   class Buffer {
     public:
-      void append(const char* data, std::size_t len);
+      void append(std::string_view data);
+      std::string_view view() const noexcept;
 
-      const char* readData() const;
-      std::size_t readableBytes() const;
-
+      // Remove exactly the bytes that have consumed.
       void consume(std::size_t len);
-      void clear();
+
+      void clear() noexcept;
+
+      std::size_t size() const noexcept;
+      bool empty() const noexcept;
 
     private:
       std::string data_;
-      std::size_t readPos_ = 0;
   };
 }
 // namespace redis::net

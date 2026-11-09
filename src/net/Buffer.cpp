@@ -2,34 +2,36 @@
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
+#include <stdexcept>
+#include <string_view>
 
 namespace redis::net {
-  void Buffer::append(const char*data, std::size_t len){
-    data_.append(data, len);
+  void Buffer::append(std::string_view data){
+    data_.append(data.data(), data.size());
   }
 
-  const char* Buffer::readData() const {
-    return data_.data() + readPos_;
+  std::string_view Buffer::view() const noexcept {
+    return data_;
   }
 
-  std::size_t Buffer::readableBytes() const {
-    return data_.size() - readPos_;
-  }
-
-  void Buffer::consume(std::size_t len){
-    readPos_ += std::min(len, readableBytes());
-
-    if(readPos_ == data_.size()){
-      clear();
-    } else if(readPos_ > 4096 && readPos_ > data_.size() / 2){
-      data_.erase(0, readPos_);
-      readPos_ = 0;
+  void Buffer::consume(std::size_t count){
+    if(count > data_.size()){
+      throw std::out_of_range("Buffer consume exceeds size");
     }
+
+    data_.erase(0, count);
   }
 
   void Buffer::clear(){
     data_.clear();
-    readPos_ = 0;
+  }
+  
+  std::size_t Buffer::size() const noexcept{
+    return data_.size();
+  }
+
+  bool Buffer::empty() const noexcept {
+    return data_.empty();
   }
 
 }// namespace redis::net
